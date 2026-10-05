@@ -1,0 +1,31 @@
+{
+  "name": "lift-training-log",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --configLoader runner",
+    "build": "tsc -b && vite build --configLoader runner",
+    "preview": "vite preview --host 127.0.0.1 --configLoader runner",
+    "typecheck": "tsc -b",
+    "test": "vitest run --configLoader runner",
+    "test:browser": "playwright test",
+    "format": "prettier --write src tests *.ts *.json *.md .github/workflows/*.yml index.html",
+    "format:check": "prettier --check src tests *.ts *.json *.md .github/workflows/*.yml index.html"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "prettier": "^3.9.9",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}
