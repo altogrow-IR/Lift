@@ -9,7 +9,7 @@ const getSets = (page: Page) =>
     key,
   );
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await expect(
     page.getByRole("heading", { name: "今日のトレーニング" }),
   ).toBeVisible();
@@ -255,7 +255,7 @@ test("別タブの更新を読み込み同時利用の記録を保持する", as
   context,
 }) => {
   const other = await context.newPage();
-  await other.goto("/");
+  await other.goto("./");
   await page.getByRole("button", { name: "1セット記録する" }).click();
   await expect(other.locator(".set-row")).toHaveCount(1);
   await other.getByRole("button", { name: "1セット記録する" }).click();
