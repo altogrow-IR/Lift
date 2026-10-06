@@ -5,6 +5,7 @@ import {
   aggregate,
   displayDate,
   shiftDate,
+  setLabel,
   type Metric,
   type Store,
 } from "../lib/model";
@@ -16,7 +17,7 @@ export function ProgressPage({
 }: {
   data: Store;
   today: string;
-  goRecord: () => void;
+  goRecord: (exerciseId: string) => void;
   demo?: boolean;
 }) {
   const [exerciseId, setExerciseId] = useState(data.selectedId);
@@ -56,6 +57,23 @@ export function ProgressPage({
   const points = allPoints.filter(
     (p) => !period || p.date >= shiftDate(today, -(period - 1)),
   );
+  const latestPoint = allPoints.at(-1);
+  const previousPoint = allPoints.at(-2);
+  const difference =
+    latestPoint && previousPoint
+      ? latestPoint.value - previousPoint.value
+      : null;
+  const bestPoint = allPoints.reduce<typeof latestPoint>(
+    (best, point) => (!best || point.value > best.value ? point : best),
+    undefined,
+  );
+  const previousSession =
+    latestPoint?.date === today ? previousPoint : latestPoint;
+  const previousSets = data.sets
+    .filter(
+      (s) => s.exerciseId === exercise.id && s.date === previousSession?.date,
+    )
+    .sort((a, b) => a.createdAt - b.createdAt);
   const improvement =
     points.length > 1 ? points.at(-1)!.value - points[0].value : null;
   const totalDays = new Set(
@@ -126,6 +144,7 @@ export function ProgressPage({
               {data.exercises.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.name}
+                  {e.hidden ? "（非表示）" : ""}
                 </option>
               ))}
             </select>
@@ -236,12 +255,84 @@ export function ProgressPage({
                 : `${exercise.name}を記録すると、グラフが表示されます。`}
             </p>
             {!demo && (
-              <button className="secondary" onClick={goRecord}>
+              <button
+                className="secondary"
+                disabled={Boolean(exercise.hidden)}
+                onClick={() => goRecord(exercise.id)}
+              >
                 トレーニングを記録する
                 <Icon name="chevron" size={17} />
               </button>
             )}
           </div>
+        )}
+      </section>
+      <section
+        className="panel comparison-panel"
+        aria-label="前回比と自己ベスト"
+      >
+        <div className="section-heading">
+          <h2>{exercise.name}の振り返り</h2>
+        </div>
+        <div className="comparison-grid">
+          <div>
+            <span>前回比 · {label}</span>
+            <strong>
+              {difference === null
+                ? "比較待ち"
+                : `${difference > 0 ? "+" : ""}${difference.toLocaleString()} ${unit}`}
+            </strong>
+            <small>
+              {previousPoint && latestPoint
+                ? `${displayDate(previousPoint.date)} → ${displayDate(latestPoint.date)}`
+                : "2日分の記録で比較できます"}
+            </small>
+          </div>
+          <div>
+            <span>自己ベスト · {label}</span>
+            <strong>
+              {bestPoint
+                ? `${bestPoint.value.toLocaleString()} ${unit}`
+                : "記録なし"}
+            </strong>
+            <small>
+              {bestPoint
+                ? `${displayDate(bestPoint.date, true)} · 全期間`
+                : "最初の記録を待っています"}
+            </small>
+          </div>
+        </div>
+        <h3>
+          前回の全セット
+          {previousSession
+            ? ` · ${displayDate(previousSession.date, true)}`
+            : ""}
+        </h3>
+        <p className="small-note left">
+          今日の記録がある場合は、その前の記録日を表示します。
+        </p>
+        {previousSets.length ? (
+          <ol className="previous-sets">
+            {previousSets.map((set, i) => (
+              <li key={set.id}>
+                <span>{i + 1}セット目</span>
+                <strong>{setLabel(set, exercise.kind)}</strong>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="muted">前回の記録はまだありません。</p>
+        )}
+        {!demo && (
+          <button
+            className="secondary full"
+            disabled={Boolean(exercise.hidden)}
+            onClick={() => goRecord(exercise.id)}
+          >
+            {exercise.hidden
+              ? "設定で再表示すると記録できます"
+              : `${exercise.name}を記録する`}
+          </button>
         )}
       </section>
       <section className="panel consistency-panel">

@@ -4,6 +4,7 @@ export type Exercise = {
   name: string;
   group: string;
   kind: ExerciseKind;
+  hidden?: boolean;
 };
 export type TrainingSet = {
   id: string;
@@ -102,15 +103,20 @@ export function parseStore(raw: string): Store {
       !["weight", "bodyweight", "time"].includes(String(e.kind))
     )
       throw new Error("invalid exercise");
+    if (e.hidden !== undefined && typeof e.hidden !== "boolean")
+      throw new Error("invalid hidden flag");
     ids.add(e.id);
     return {
       id: e.id,
       name: e.name.trim(),
       group: e.group.trim(),
       kind: e.kind as ExerciseKind,
+      ...(e.hidden === undefined ? {} : { hidden: e.hidden }),
     };
   });
   const setIds = new Set<string>();
+  const visibleExercises = exercises.filter((e) => !e.hidden);
+  if (!visibleExercises.length) throw new Error("no visible exercise");
   const sets: TrainingSet[] = v.sets.map((s: unknown) => {
     if (
       !record(s) ||
@@ -144,9 +150,10 @@ export function parseStore(raw: string): Store {
     exercises,
     sets,
     selectedId:
-      typeof v.selectedId === "string" && ids.has(v.selectedId)
+      typeof v.selectedId === "string" &&
+      visibleExercises.some((e) => e.id === v.selectedId)
         ? v.selectedId
-        : exercises[0].id,
+        : visibleExercises[0].id,
     restSeconds: [0, 60, 90, 120, 180].includes(Number(v.restSeconds))
       ? Number(v.restSeconds)
       : 90,

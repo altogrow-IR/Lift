@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Icon } from "../components/Icon";
+import { ExerciseManager } from "../components/ExerciseManager";
 import { Modal } from "../components/Modal";
 import {
   freshStore,
@@ -25,12 +26,14 @@ export function SettingsPage({
   restore,
   notify,
   showDemo,
+  update,
 }: {
   data: Store;
   blocked: boolean;
   restore: (s: Store) => boolean;
   notify: (s: string) => void;
   showDemo: () => void;
+  update: (change: (store: Store) => Store) => boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<Store | null>(null);
@@ -72,6 +75,12 @@ export function SettingsPage({
           <Icon name="settings" size={28} />
         </span>
       </div>
+      <ExerciseManager
+        data={data}
+        blocked={blocked}
+        update={update}
+        notify={notify}
+      />
       <section className="panel settings-section">
         <div className="section-heading">
           <h2>記録のバックアップ</h2>

@@ -340,3 +340,223 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
     expect(errors).toEqual([]);
   });
 }
+
+test("入力途中の値はメニュー・種目切り替え・リロードで保持される", async ({
+  page,
+}) => {
+  const weight = page.getByRole("textbox", { name: "重量", exact: true });
+  await weight.fill("42.5");
+  await page.getByRole("textbox", { name: "回数", exact: true }).fill("7");
+  await menu(page, "成長").click();
+  await menu(page, "記録").click();
+  await expect(weight).toHaveValue("42.5");
+  await page
+    .locator(".quick-exercises")
+    .getByRole("button", { name: "スクワット", exact: true })
+    .click();
+  await weight.fill("65");
+  await page
+    .locator(".quick-exercises")
+    .getByRole("button", { name: "ベンチプレス", exact: true })
+    .click();
+  await expect(weight).toHaveValue("42.5");
+  await expect(
+    page.getByRole("textbox", { name: "回数", exact: true }),
+  ).toHaveValue("7");
+  await page.reload();
+  await expect(weight).toHaveValue("42.5");
+  expect((await getSets(page)).length).toBe(0);
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  expect((await getSets(page))[0].weight).toBe(42.5);
+});
+
+test("成長画面から選択中の種目を記録する", async ({ page }) => {
+  await menu(page, "成長").click();
+  await page.getByLabel("グラフの種目").selectOption("squat");
+  await page
+    .getByRole("button", { name: "トレーニングを記録する", exact: true })
+    .click();
+  await expect(page.locator(".exercise-title")).toContainText("スクワット");
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  await menu(page, "成長").click();
+  await page
+    .getByRole("button", { name: "スクワットを記録する", exact: true })
+    .click();
+  await expect(page.locator(".exercise-title")).toContainText("スクワット");
+});
+
+test("種目名の変更・非表示・再表示で履歴を保持する", async ({ page }) => {
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  await menu(page, "設定").click();
+  await page.getByText("種目一覧を開く（8種目）", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "ベンチプレスの名前を変更", exact: true })
+    .click();
+  await page.getByLabel("種目名", { exact: true }).fill("ベンチ（ジム）");
+  await page.getByRole("button", { name: "名前を保存", exact: true }).click();
+  await page
+    .getByRole("button", { name: "ベンチ（ジム）を非表示", exact: true })
+    .click();
+  await menu(page, "記録").click();
+  await expect(page.locator(".exercise-title")).toContainText("スクワット");
+  await page.locator(".exercise-select").click();
+  await expect(page.getByRole("dialog")).not.toContainText("ベンチ（ジム）");
+  await page.keyboard.press("Escape");
+  await menu(page, "履歴").click();
+  await expect(page.locator(".history-list")).toContainText("ベンチ（ジム）");
+  expect((await getSets(page)).length).toBe(1);
+  await page.reload();
+  await menu(page, "設定").click();
+  await page.getByText("種目一覧を開く（8種目）", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "ベンチ（ジム）を再表示", exact: true })
+    .click();
+  await menu(page, "記録").click();
+  await page.locator(".exercise-select").click();
+  await expect(page.getByRole("dialog")).toContainText("ベンチ（ジム）");
+});
+
+test("前回比・全期間自己ベスト・前回の全セットの値が正しい", async ({
+  page,
+}) => {
+  const date = await page.getByLabel("記録する日付").inputValue();
+  await page.evaluate(
+    ({ key, date }) => {
+      const state = {
+        version: 1,
+        exercises: [
+          { id: "bench", name: "ベンチプレス", group: "胸", kind: "weight" },
+        ],
+        selectedId: "bench",
+        restSeconds: 0,
+        sets: [
+          {
+            id: "a",
+            exerciseId: "bench",
+            date: "2025-01-01",
+            weight: 80,
+            reps: 3,
+            seconds: 0,
+            createdAt: 1,
+          },
+          {
+            id: "b",
+            exerciseId: "bench",
+            date: "2025-01-02",
+            weight: 50,
+            reps: 10,
+            seconds: 0,
+            createdAt: 2,
+          },
+          {
+            id: "c",
+            exerciseId: "bench",
+            date: "2025-01-02",
+            weight: 45,
+            reps: 8,
+            seconds: 0,
+            createdAt: 3,
+          },
+          {
+            id: "d",
+            exerciseId: "bench",
+            date,
+            weight: 60,
+            reps: 10,
+            seconds: 0,
+            createdAt: 4,
+          },
+        ],
+      };
+      localStorage.setItem(key, JSON.stringify(state));
+    },
+    { key, date },
+  );
+  await page.reload();
+  await menu(page, "成長").click();
+  await expect(page.locator(".comparison-grid")).toContainText("+10 kg");
+  await expect(page.locator(".comparison-grid")).toContainText("80 kg");
+  await expect(page.locator(".previous-sets li")).toHaveCount(2);
+  await expect(page.locator(".previous-sets")).toContainText("50 kg × 10 回");
+  await expect(page.locator(".previous-sets")).toContainText("45 kg × 8 回");
+  await page.getByRole("button", { name: "総負荷", exact: true }).click();
+  await expect(page.locator(".comparison-grid")).toContainText("-260 kg・回");
+});
+
+test("日付ごとの入力保持・過去日の記録後も同じ値で続けられる", async ({
+  page,
+}) => {
+  const date = page.getByLabel("記録する日付");
+  const today = await date.inputValue();
+  const weight = page.getByRole("textbox", { name: "重量", exact: true });
+  await weight.fill("70");
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  await date.fill("2025-01-01");
+  await weight.fill("35");
+  await menu(page, "成長").click();
+  await menu(page, "記録").click();
+  await expect(date).toHaveValue("2025-01-01");
+  await expect(weight).toHaveValue("35");
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  await expect(weight).toHaveValue("35");
+  await date.fill(today);
+  await expect(weight).toHaveValue("70");
+});
+
+test("初期化で下書きを消去し、最後の表示種目は非表示にできない", async ({
+  page,
+}) => {
+  const weight = page.getByRole("textbox", { name: "重量", exact: true });
+  await weight.fill("99");
+  await menu(page, "設定").click();
+  await page.getByRole("button", { name: "初期化する", exact: true }).click();
+  await page
+    .getByRole("button", { name: "すべて削除して初期化", exact: true })
+    .click();
+  await menu(page, "記録").click();
+  await expect(weight).toHaveValue("20");
+  await page.reload();
+  await expect(weight).toHaveValue("20");
+  await menu(page, "設定").click();
+  await page.getByText("種目一覧を開く（8種目）", { exact: true }).click();
+  const buttons = page
+    .locator(".manage-actions button")
+    .filter({ hasText: "非表示" });
+  for (let i = 0; i < 7; i++) await buttons.first().click();
+  await expect(buttons.last()).toBeDisabled();
+});
+
+for (const kind of ["bodyweight", "time"]) {
+  test(kind + ": 前回比と自己ベストを適切な単位で表示", async ({ page }) => {
+    await page.evaluate(
+      ({ key, kind }) => {
+        const sets = [10, 15].map((value, i) => ({
+          id: String(i),
+          exerciseId: "custom",
+          date: "2025-01-0" + (i + 1),
+          weight: 0,
+          reps: kind === "bodyweight" ? value : 0,
+          seconds: kind === "time" ? value : 0,
+          createdAt: i,
+        }));
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            version: 1,
+            exercises: [{ id: "custom", name: "検証用", group: "全身", kind }],
+            sets,
+            selectedId: "custom",
+            restSeconds: 0,
+          }),
+        );
+      },
+      { key, kind },
+    );
+    await page.reload();
+    await menu(page, "成長").click();
+    const unit = kind === "time" ? "秒" : "回";
+    await expect(page.locator(".comparison-grid")).toContainText("+5 " + unit);
+    await expect(page.locator(".comparison-grid")).toContainText("15 " + unit);
+    await expect(page.locator(".previous-sets li")).toHaveCount(1);
+  });
+}

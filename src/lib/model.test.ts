@@ -176,3 +176,25 @@ describe("成長の集計", () => {
     expect(freshStore().sets.length).toBe(0);
   });
 });
+
+describe("種目の非表示の互換性", () => {
+  it("旧データを保持し、非表示をバックアップで往復する", () => {
+    const old = withSet();
+    expect(parseStore(JSON.stringify(old))).toEqual(old);
+    old.exercises[0].hidden = true;
+    const restored = parseStore(JSON.stringify(old));
+    expect(restored.exercises[0].hidden).toBe(true);
+    expect(restored.sets).toEqual(old.sets);
+    expect(restored.selectedId).toBe("squat");
+  });
+  it("全種目が非表示のデータと不正な非表示値を拒否する", () => {
+    const state = freshStore();
+    state.exercises.forEach((e) => (e.hidden = true));
+    expect(() => parseStore(JSON.stringify(state))).toThrow();
+    const invalid = {
+      ...freshStore(),
+      exercises: [{ ...freshStore().exercises[0], hidden: "yes" }],
+    };
+    expect(() => parseStore(JSON.stringify(invalid))).toThrow();
+  });
+});

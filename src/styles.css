@@ -2153,3 +2153,203 @@ select,
     scroll-behavior: auto !important;
   }
 }
+
+/* Readable supporting text and touch targets across mobile and desktop. */
+.subtitle,
+.muted,
+.small-note,
+.graph-description,
+.input-tip,
+.save-caption,
+.local-note,
+.edit-hint,
+.rest-title span,
+.growth-note,
+.result-count {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.section-label,
+.stepper label,
+.exercise-title small,
+.previous-record,
+.previous-record strong,
+.previous-record small,
+.previous-record .muted,
+.stat-card > span,
+.activity-legend,
+.chart-scrubber,
+.chart-value > span {
+  font-size: 13px;
+}
+.quick-exercises button,
+.rest-options button,
+.previous-record button,
+.text-button,
+.metric-tabs button,
+.segmented button,
+.icon-button,
+.toast button {
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 13px;
+}
+.quick-exercises {
+  flex-wrap: wrap;
+}
+.previous-record {
+  flex-wrap: wrap;
+}
+.rest-options {
+  flex-wrap: wrap;
+}
+.mobile-nav button span {
+  font-size: 12px;
+}
+.managed-exercises {
+  margin-top: 18px;
+}
+.managed-exercise {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e3e8dc;
+}
+.managed-exercise > div:first-child {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.managed-exercise strong {
+  display: block;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.managed-exercise span {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+}
+.manage-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.manage-actions button {
+  min-height: 44px;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+.comparison-panel {
+  margin-top: 24px;
+}
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.comparison-grid > div {
+  border-radius: 12px;
+  padding: 16px;
+  background: #f3f6ec;
+}
+.comparison-grid span,
+.comparison-grid small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.comparison-grid strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.comparison-panel h3 {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.previous-sets {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 24px;
+}
+.previous-sets li {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e3e8dc;
+  font-size: 14px;
+}
+.comparison-panel .full {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 540px) {
+  .page-content {
+    padding-top: 16px;
+  }
+  .page-heading {
+    margin-bottom: 20px;
+  }
+  .record-panel {
+    padding: 18px 16px;
+  }
+  .record-panel .section-heading {
+    margin-bottom: 14px;
+  }
+  .quick-exercises {
+    margin: 12px 0;
+  }
+  .quick-exercises button {
+    padding: 8px;
+    font-size: 12px;
+  }
+  .previous-record {
+    padding: 8px 0;
+  }
+  .input-grid {
+    margin-top: 14px;
+  }
+  .input-tip {
+    margin: 12px 0;
+  }
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-card {
+    min-height: 118px;
+  }
+  .trend-svg {
+    min-height: 200px;
+  }
+  .trend-svg text {
+    font-size: 20px;
+  }
+}
+
+.exercise-management summary {
+  font-size: 14px;
+  min-height: 44px;
+  display: list-item;
+  padding: 12px 4px;
+  cursor: pointer;
+  color: #45533a;
+}
+.muted,
+.small-note,
+.subtitle,
+.input-tip,
+.save-caption,
+.graph-description,
+.local-note,
+.edit-hint,
+.previous-record small,
+.rest-title span {
+  color: #58644d;
+}

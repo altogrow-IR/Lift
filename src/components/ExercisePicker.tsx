@@ -12,7 +12,7 @@ export function ExercisePicker({
   exercises: Exercise[];
   selectedId: string;
   close: () => void;
-  select: (id: string) => void;
+  select: (id: string) => boolean;
   add: (exercise: Exercise) => boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -108,14 +108,13 @@ export function ExercisePicker({
           />
           <div className="exercise-list">
             {exercises
-              .filter((e) => `${e.name}${e.group}`.includes(query))
+              .filter((e) => !e.hidden && `${e.name}${e.group}`.includes(query))
               .map((e) => (
                 <button
                   key={e.id}
                   className={`exercise-option ${e.id === selectedId ? "selected" : ""}`}
                   onClick={() => {
-                    select(e.id);
-                    close();
+                    if (select(e.id)) close();
                   }}
                 >
                   <span className="exercise-symbol">
@@ -135,7 +134,9 @@ export function ExercisePicker({
                   {e.id === selectedId && <Icon name="check" />}
                 </button>
               ))}
-            {!exercises.some((e) => `${e.name}${e.group}`.includes(query)) && (
+            {!exercises.some(
+              (e) => !e.hidden && `${e.name}${e.group}`.includes(query),
+            ) && (
               <p className="muted">
                 該当する種目がありません。新しく追加できます。
               </p>

@@ -7,6 +7,7 @@ import { ProgressPage } from "./pages/ProgressPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useStore } from "./hooks/useStore";
+import { useDrafts } from "./hooks/useDrafts";
 import { useRestTimer } from "./hooks/useRestTimer";
 import {
   generateDemo,
@@ -47,6 +48,8 @@ export default function App() {
   const [demo, setDemo] = useState(false);
   const [demoData] = useState(generateDemo);
   const timer = useRestTimer();
+  const drafts = useDrafts();
+  const [recordDate, setRecordDate] = useState("");
   const toastTimer = useRef<number | undefined>(undefined);
   const notify = (message: string, undo?: () => void) => {
     window.clearTimeout(toastTimer.current);
@@ -80,7 +83,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
   const select = (id: string) => {
-    update((s) => ({ ...s, selectedId: id }));
+    return update((s) => ({ ...s, selectedId: id }));
   };
   const add = (exercise: Exercise) =>
     update((s) => ({
@@ -92,6 +95,8 @@ export default function App() {
     const result = restore(next);
     if (result) {
       setToast(null);
+      drafts.clear();
+      setRecordDate("");
       timer.stop();
       setEditing(null);
       setPicker(false);
@@ -190,6 +195,9 @@ export default function App() {
               data={data}
               today={today}
               blocked={blocked}
+              drafts={drafts}
+              dateOverride={recordDate}
+              setDateOverride={setRecordDate}
               update={update}
               openPicker={() => setPicker(true)}
               select={select}
@@ -221,7 +229,12 @@ export default function App() {
               key={demo ? "demo" : "real"}
               data={demo ? demoData : data}
               today={today}
-              goRecord={() => navigate("record")}
+              goRecord={(id) => {
+                if (select(id)) {
+                  setRecordDate("");
+                  navigate("record");
+                }
+              }}
               demo={demo}
             />
           )}
@@ -236,6 +249,7 @@ export default function App() {
             <SettingsPage
               data={data}
               blocked={blocked}
+              update={update}
               restore={restoreData}
               notify={notify}
               showDemo={() => {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { useDrafts } from "../hooks/useDrafts";
 import { Icon } from "../components/Icon";
 import { Stepper } from "../components/Stepper";
 import {
@@ -18,7 +19,10 @@ type Props = {
   blocked: boolean;
   update: (f: (s: Store) => Store) => boolean;
   openPicker: () => void;
-  select: (id: string) => void;
+  select: (id: string) => boolean;
+  drafts: ReturnType<typeof useDrafts>;
+  dateOverride: string;
+  setDateOverride: (date: string) => void;
   edit: (set: TrainingSet) => void;
   saved: (set: TrainingSet, isPersonalBest: boolean) => void;
   timer: {
@@ -30,13 +34,14 @@ type Props = {
 };
 export function RecordPage(props: Props) {
   const { data, today, timer, update } = props;
-  const [dateOverride, setDateOverride] = useState("");
+  const { dateOverride, setDateOverride } = props;
   const date = dateOverride || today;
   const exercise =
     data.exercises.find((e) => e.id === data.selectedId) ?? data.exercises[0];
   const daySets = data.sets.filter((s) => s.date === date);
   const activeDates = new Set(data.sets.map((s) => s.date));
-  const recentExercises = [...data.exercises]
+  const recentExercises = data.exercises
+    .filter((e) => !e.hidden)
     .sort(
       (a, b) =>
         (latestSet(data.sets, b.id)?.createdAt ?? 0) -
@@ -141,6 +146,7 @@ export function RecordPage(props: Props) {
               blocked={props.blocked}
               update={update}
               saved={props.saved}
+              drafts={props.drafts}
             />
           </section>
           <section className="rest-panel" aria-label="休憩タイマー">
@@ -277,15 +283,27 @@ function SetForm({
   blocked,
   update,
   saved,
-}: Pick<Props, "data" | "blocked" | "update" | "saved"> & {
+  drafts,
+}: Pick<Props, "data" | "blocked" | "update" | "saved" | "drafts"> & {
   exercise: Exercise;
   date: string;
 }) {
-  const latest = latestSet(data.sets, exercise.id);
+  const latest = latestSet(
+    data.sets.filter((s) => s.date <= date),
+    exercise.id,
+  );
   const previous = latestSet(data.sets, exercise.id, date);
-  const [weight, setWeight] = useState(String(latest?.weight ?? 20));
-  const [reps, setReps] = useState(String(latest?.reps ?? 10));
-  const [seconds, setSeconds] = useState(String(latest?.seconds || 30));
+  const draftKey = `${exercise.id}:${date}`;
+  const { weight, reps, seconds } = drafts.values[draftKey] ?? {
+    weight: String(latest?.weight ?? 20),
+    reps: String(latest?.reps ?? 10),
+    seconds: String(latest?.seconds || 30),
+  };
+  const change = (field: "weight" | "reps" | "seconds", value: string) =>
+    drafts.set(draftKey, { weight, reps, seconds, [field]: value });
+  const setWeight = (v: string) => change("weight", v);
+  const setReps = (v: string) => change("reps", v);
+  const setSeconds = (v: string) => change("seconds", v);
   const [error, setError] = useState("");
   const count = data.sets.filter(
     (s) => s.exerciseId === exercise.id && s.date === date,
@@ -307,9 +325,11 @@ function SetForm({
             Number(weight) <= LIMITS.weight));
   const restorePrevious = () => {
     if (previous) {
-      setWeight(String(previous.weight));
-      setReps(String(previous.reps));
-      setSeconds(String(previous.seconds));
+      drafts.set(draftKey, {
+        weight: String(previous.weight),
+        reps: String(previous.reps),
+        seconds: String(previous.seconds),
+      });
       setError("");
     }
   };
@@ -354,6 +374,7 @@ function SetForm({
           set[metric] >
             allPrevious.reduce((best, s) => Math.max(best, s[metric]), 0);
         if (update((s) => ({ ...s, sets: [...s.sets, set] }))) {
+          drafts.remove(draftKey);
           setError("");
           saved(set, personalBest);
         }

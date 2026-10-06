@@ -11,3 +11,7 @@
 - 変更後は `npm test`、`npm run build`。UI・保存変更ではプレビューを起動して `npm run test:browser` も実行する。
 - Playwrightは既定でWindowsのEdgeを使う。他環境はPLAYWRIGHT_CHANNELとTEST_URLで調整する。
 - ブラウザ幅の検証と、実機のiPhone／Androidの検証を区別して報告する。
+
+- Exercise.hiddenは任意のboolean。非表示でも種目ID・記録を削除しない。最低1種目を表示し、履歴・成長では非表示種目も参照する。既存version=1を維持する。
+- 入力途中の値はuseDraftsで種目ID・記録日ごとに保持し、sessionStorageを使用。実記録・バックアップに含めず、復元・初期化時に消去する。
+- 成長画面の前回比は直近2記録日の差、自己ベストは全期間の日次最大値。前回の全セットは今日を除く最新の記録日。

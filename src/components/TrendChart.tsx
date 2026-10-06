@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { displayDate } from "../lib/model";
 export function TrendChart({
   points,
@@ -10,7 +10,16 @@ export function TrendChart({
   label: string;
 }) {
   const [activeDate, setActiveDate] = useState("");
-  const width = 680,
+  const [compact, setCompact] = useState(
+    () => window.matchMedia("(max-width: 540px)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 540px)");
+    const resize = () => setCompact(query.matches);
+    query.addEventListener("change", resize);
+    return () => query.removeEventListener("change", resize);
+  }, []);
+  const width = compact ? 420 : 680,
     height = 264,
     left = 52,
     right = 18,
