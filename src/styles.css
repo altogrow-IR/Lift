@@ -493,6 +493,11 @@ h1 {
 .quick-exercises button:hover {
   background: #f1f5e6;
 }
+.previous-records {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .previous-record {
   border-top: 1px solid #eef0e8;
   border-bottom: 1px solid #eef0e8;
@@ -503,6 +508,13 @@ h1 {
   min-height: 50px;
   font-size: 11px;
   color: #87917e;
+}
+.previous-records .previous-record {
+  min-height: 44px;
+  padding-block: 0;
+}
+.previous-records .previous-record + .previous-record {
+  border-top: 0;
 }
 .previous-record strong {
   font-size: 12px;
@@ -518,7 +530,7 @@ h1 {
   color: #5a7240;
   text-decoration: underline;
   text-underline-offset: 3px;
-  min-height: 30px;
+  min-height: 44px;
   white-space: nowrap;
 }
 .previous-record .muted {

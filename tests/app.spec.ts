@@ -124,6 +124,71 @@ test("過去日・前回の入力・重量と総負荷のグラフ", async ({ pa
   await expect(page.locator(".chart-value")).toContainText("200");
 });
 
+test("記録画面で同じ日を含む直近3セットの数値を再利用できる", async ({
+  page,
+}) => {
+  await page.evaluate((key) => {
+    const state = {
+      version: 1,
+      exercises: [
+        { id: "bench", name: "ベンチプレス", group: "胸", kind: "weight" },
+        { id: "squat", name: "スクワット", group: "脚", kind: "weight" },
+      ],
+      selectedId: "bench",
+      restSeconds: 0,
+      sets: [
+        { day: 1, weight: 20 },
+        { day: 2, weight: 25 },
+        { day: 3, weight: 30 },
+        { day: 4, weight: 35 },
+        { day: 4, weight: 40 },
+        { day: 5, weight: 45 },
+        { day: 6, weight: 50 },
+        { day: 4, weight: 60, exerciseId: "squat" },
+      ].map(({ day, weight, exerciseId = "bench" }, index) => ({
+        id: String(index + 1),
+        exerciseId,
+        date: `2025-01-0${day}`,
+        weight,
+        reps: index + 1,
+        seconds: 0,
+        createdAt: index + 1,
+      })),
+    };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, key);
+  await page.reload();
+  await page.getByLabel("記録する日付").fill("2025-01-05");
+  const recent = page.getByRole("list", { name: "直近3セットの記録" });
+  const rows = recent.getByRole("listitem");
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText("45 kg × 6 回");
+  await expect(rows.nth(1)).toContainText("40 kg × 5 回");
+  await expect(rows.nth(2)).toContainText("35 kg × 4 回");
+  await rows
+    .nth(2)
+    .getByRole("button", { name: /数値を使う/ })
+    .click();
+  await expect(page.getByRole("textbox", { name: "重量" })).toHaveValue("35");
+  await expect(page.getByRole("textbox", { name: "回数" })).toHaveValue("4");
+  await page.getByRole("button", { name: "1セット記録する" }).click();
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText("35 kg × 4 回");
+  await expect(rows.nth(1)).toContainText("45 kg × 6 回");
+  await expect(rows.nth(2)).toContainText("40 kg × 5 回");
+  await page.reload();
+  await page.getByLabel("記録する日付").fill("2025-01-05");
+  await expect(rows.nth(0)).toContainText("35 kg × 4 回");
+
+  for (const width of [320, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(rows.nth(2).getByRole("button")).toBeInViewport();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
+});
+
 test("バックアップ往復と復元前の確認・不正ファイル拒否", async ({ page }) => {
   await page.getByRole("button", { name: "1セット記録する" }).click();
   await menu(page, "設定").click();

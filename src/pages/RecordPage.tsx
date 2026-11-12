@@ -7,6 +7,7 @@ import {
   getWeekDates,
   latestSet,
   LIMITS,
+  recentSets,
   setLabel,
   type Exercise,
   type Store,
@@ -288,11 +289,8 @@ function SetForm({
   exercise: Exercise;
   date: string;
 }) {
-  const latest = latestSet(
-    data.sets.filter((s) => s.date <= date),
-    exercise.id,
-  );
-  const previous = latestSet(data.sets, exercise.id, date);
+  const previous = recentSets(data.sets, exercise.id, date);
+  const latest = previous[0];
   const draftKey = `${exercise.id}:${date}`;
   const { weight, reps, seconds } = drafts.values[draftKey] ?? {
     weight: String(latest?.weight ?? 20),
@@ -323,15 +321,13 @@ function SetForm({
             Number.isFinite(Number(weight)) &&
             Number(weight) >= 0 &&
             Number(weight) <= LIMITS.weight));
-  const restorePrevious = () => {
-    if (previous) {
-      drafts.set(draftKey, {
-        weight: String(previous.weight),
-        reps: String(previous.reps),
-        seconds: String(previous.seconds),
-      });
-      setError("");
-    }
+  const restorePrevious = (set: TrainingSet) => {
+    drafts.set(draftKey, {
+      weight: String(set.weight),
+      reps: String(set.reps),
+      seconds: String(set.seconds),
+    });
+    setError("");
   };
   return (
     <form
@@ -380,20 +376,29 @@ function SetForm({
         }
       }}
     >
-      <div className="previous-record">
-        <span>前回</span>
-        {previous ? (
-          <>
-            <strong>{setLabel(previous, exercise.kind)}</strong>
-            <small>{displayDate(previous.date)}</small>
-            <button type="button" onClick={restorePrevious}>
-              数値を使う
-            </button>
-          </>
-        ) : (
+      {previous.length > 0 ? (
+        <ul className="previous-records" aria-label="直近3セットの記録">
+          {previous.map((set, index) => (
+            <li className="previous-record" key={set.id}>
+              <span>{index === 0 ? "前回" : `${index + 1}回前`}</span>
+              <strong>{setLabel(set, exercise.kind)}</strong>
+              <small>{displayDate(set.date)}</small>
+              <button
+                type="button"
+                aria-label={`${index === 0 ? "前回" : `${index + 1}回前`}の数値を使う`}
+                onClick={() => restorePrevious(set)}
+              >
+                数値を使う
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="previous-record">
+          <span>前回</span>
           <span className="muted">記録すると、次回から表示されます</span>
-        )}
-      </div>
+        </div>
+      )}
       <div
         className={`input-grid ${exercise.kind !== "weight" ? "single" : ""}`}
       >

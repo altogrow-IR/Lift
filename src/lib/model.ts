@@ -164,11 +164,28 @@ export function latestSet(
   exerciseId: string,
   before?: string,
 ): TrainingSet | undefined {
+  return newestSets(sets, exerciseId, before)[0];
+}
+
+function newestSets(
+  sets: TrainingSet[],
+  exerciseId: string,
+  before?: string,
+): TrainingSet[] {
   return sets
     .filter((s) => s.exerciseId === exerciseId && (!before || s.date < before))
-    .sort(
-      (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
-    )[0];
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+}
+
+export function recentSets(
+  sets: TrainingSet[],
+  exerciseId: string,
+  throughDate: string,
+): TrainingSet[] {
+  return newestSets(
+    sets.filter((set) => set.date <= throughDate),
+    exerciseId,
+  ).slice(0, 3);
 }
 export function setLabel(
   set: Pick<TrainingSet, "weight" | "reps" | "seconds">,
